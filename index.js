@@ -8,7 +8,10 @@ const client = new Client({
 });
 const channelID = process.env['CHANNEL_ID'];
 
-const saveMessageToJSON = async (message) => {
+// Initialize an empty array to store message data in memory
+let messageCollection = [];
+
+const saveMessageToMemory = async (message) => {
   const messageData = {
     content: message.content,
     sender: message.author.username,
@@ -16,19 +19,10 @@ const saveMessageToJSON = async (message) => {
     time: message.createdTimestamp,
   };
 
-  try {
-    const fs = require('fs');
-    fs.writeFileSync('news.json', JSON.stringify([messageData], null, 2));
-  } catch (error) {
-    console.error('Error saving message to JSON file:', error);
-  }
-};
+  // Save message data to the messageCollection array
+  messageCollection.push(messageData);
 
-const handleEveryonePing = async (message) => {
-  if (message.mentions.everyone) {
-    console.log('@everyone ping detected in channel', message.channel.name);
-    await saveMessageToJSON(message);
-  }
+  console.log('Message saved to memory:', messageData);
 };
 
 client.on('ready', async () => {
@@ -40,24 +34,38 @@ client.on('ready', async () => {
 
   for (const message of latestMessages.values()) {
     if (message.mentions.everyone) {
-      await handleEveryonePing(message);
-      break;
+      await saveMessageToMemory(message);
     }
   }
 
-  const collector = announcementsChannel.createMessageCollector({
-    filter: (message) => message.mentions.everyone,
+  announcementsChannel.messages.cache.forEach(message => {
+    if (message.mentions.everyone) {
+      saveMessageToMemory(message);
+    }
   });
 
-  collector.on('collect', (message) => handleEveryonePing(message));
+  announcementsChannel.on('messageCreate', (message) => {
+    if (message.mentions.everyone) {
+      saveMessageToMemory(message);
+    }
+  });
 });
 
+const handleEveryonePing = async (message) => {
+  if (message.mentions.everyone) {
+    console.log('@everyone ping detected in channel', message.channel.name);
+    await saveMessageToMemory(message);
+  }
+};
+
 const app = express();
+
 app.get('/news.json', (req, res) => {
-  const newsData = fs.readFileSync('news.json');
+  // Send the message collection as JSON response
   res.header('Access-Control-Allow-Origin', '*');
-  res.json(JSON.parse(newsData));
+  res.json(messageCollection);
 });
+
 app.listen(3000, () => {
   console.log('Express server running on port 3000');
 });
