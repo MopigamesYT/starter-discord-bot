@@ -58,8 +58,8 @@ app.get('/news.json', (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.json(JSON.parse(newsData));
 });
-app.listen(3122, () => {
-  console.log('Express server running on port 3122');
+app.listen(3000, () => {
+  console.log('Express server running on port 3000');
 });
 
 client.login(process.env['TOKEN']);
