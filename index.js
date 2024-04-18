@@ -1,6 +1,5 @@
 const { Client, GatewayIntentBits } = require("discord.js");
 const express = require('express');
-const fs = require('fs');
 const client = new Client({
   intents: Object.keys(GatewayIntentBits).map((a) => {
     return GatewayIntentBits[a];
@@ -37,12 +36,6 @@ client.on('ready', async () => {
       await saveMessageToMemory(message);
     }
   }
-
-  announcementsChannel.messages.cache.forEach(message => {
-    if (message.mentions.everyone) {
-      saveMessageToMemory(message);
-    }
-  });
 
   announcementsChannel.on('messageCreate', (message) => {
     if (message.mentions.everyone) {
